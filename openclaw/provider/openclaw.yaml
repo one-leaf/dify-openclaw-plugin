@@ -1,0 +1,133 @@
+provider: openclaw
+label:
+  en_US: OpenClaw
+  zh_Hans: OpenClaw
+description:
+  en_US: OpenClaw Gateway provider with custom routing headers for agent/session management.
+  zh_Hans: OpenClaw Gateway 提供商，支持自定义路由头用于Agent/Session管理。
+icon_small:
+  en_US: icon.svg
+supported_model_types:
+  - llm
+configurate_methods:
+  - customizable-model
+model_credential_schema:
+  model:
+    label:
+      en_US: Model Name
+      zh_Hans: 模型名称
+    placeholder:
+      en_US: Enter your model name (e.g., openclaw/main)
+      zh_Hans: 输入模型名称（例如 openclaw/main）
+  credential_form_schemas:
+    - variable: endpoint_url
+      label:
+        en_US: API Endpoint URL
+        zh_Hans: API 端点 URL
+      type: text-input
+      required: true
+      placeholder:
+        en_US: OpenClaw Gateway URL, e.g. http://localhost:18789
+        zh_Hans: OpenClaw Gateway URL，例如 http://localhost:18789
+      help:
+        en_US: Base URL of OpenClaw Gateway
+        zh_Hans: OpenClaw Gateway 的基础 URL
+    - variable: api_key
+      label:
+        en_US: API Key
+        zh_Hans: API 密钥
+      type: secret-input
+      required: false
+      placeholder:
+        en_US: Enter your API Key
+        zh_Hans: 在此输入您的 API Key
+    - variable: mode
+      label:
+        en_US: Completion Type
+        zh_Hans: 完成类型
+      type: select
+      required: true
+      default: "chat"
+      options:
+        - value: chat
+          label:
+            en_US: Chat
+            zh_Hans: 对话
+        - value: completion
+          label:
+            en_US: Completion
+            zh_Hans: 补全
+      help:
+        en_US: Chat mode for chat models, Completion mode for text completion models
+        zh_Hans: 对话模型选择 Chat 模式，文本补全模型选择 Completion 模式
+    - variable: openclaw_session_key
+      label:
+        en_US: Session Key
+        zh_Hans: 会话路由键
+      type: text-input
+      required: false
+      placeholder:
+        en_US: "{{sys.conversation_id}}"
+        zh_Hans: "{{sys.conversation_id}}"
+      help:
+        en_US: Session routing key. Use {{sys.conversation_id}} for per-conversation sessions.
+        zh_Hans: 会话路由键。使用 {{sys.conversation_id}} 实现每对话独立会话。
+provider_credential_schema:
+  credential_form_schemas:
+    - variable: endpoint_url
+      label:
+        en_US: API Endpoint URL
+        zh_Hans: API 端点 URL
+      type: text-input
+      required: true
+      placeholder:
+        en_US: OpenClaw Gateway URL, e.g. http://localhost:18789
+        zh_Hans: OpenClaw Gateway URL，例如 http://localhost:18789
+      help:
+        en_US: Base URL of OpenClaw Gateway
+        zh_Hans: OpenClaw Gateway 的基础 URL
+    - variable: api_key
+      label:
+        en_US: API Key
+        zh_Hans: API 密钥
+      type: secret-input
+      required: false
+      placeholder:
+        en_US: Enter your API Key
+        zh_Hans: 在此输入您的 API Key
+    - variable: mode
+      label:
+        en_US: Completion Type
+        zh_Hans: 完成类型
+      type: select
+      required: true
+      default: "chat"
+      options:
+        - value: chat
+          label:
+            en_US: Chat
+            zh_Hans: 对话
+        - value: completion
+          label:
+            en_US: Completion
+            zh_Hans: 补全
+      help:
+        en_US: Chat mode for chat models, Completion mode for text completion models
+        zh_Hans: 对话模型选择 Chat 模式，文本补全模型选择 Completion 模式
+    - variable: openclaw_session_key
+      label:
+        en_US: Session Key
+        zh_Hans: 会话路由键
+      type: text-input
+      required: false
+      placeholder:
+        en_US: "{{sys.conversation_id}}"
+        zh_Hans: "{{sys.conversation_id}}"
+      help:
+        en_US: Session routing key. Use {{sys.conversation_id}} for per-conversation sessions.
+        zh_Hans: 会话路由键。使用 {{sys.conversation_id}} 实现每对话独立会话。
+extra:
+  python:
+    provider_source: provider/openclaw.py
+    model_sources:
+      - "models/llm/llm.py"

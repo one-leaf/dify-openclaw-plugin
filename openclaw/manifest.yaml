@@ -1,0 +1,40 @@
+version: 0.0.1
+type: plugin
+author: oneleaf
+name: openclaw
+description:
+  en_US: OpenClaw Gateway provider with custom routing headers for agent/session management.
+  zh_Hans: OpenClaw Gateway 提供商，支持自定义路由头用于代理/会话管理。
+label:
+  en_US: OpenClaw
+  zh_Hans: OpenClaw
+icon: icon.svg
+icon_dark: icon-dark.svg
+resource:
+  memory: 268435456
+  permission:
+    tool:
+      enabled: true
+    model:
+      enabled: true
+      llm: true
+      text_embedding: false
+      rerank: false
+      tts: false
+      speech2text: false
+      moderation: false
+plugins:
+  models:
+    - provider/openclaw.yaml
+meta:
+  version: 0.0.1
+  arch:
+    - amd64
+    - arm64
+  runner:
+    language: python
+    version: "3.12"
+    entrypoint: main
+  minimum_dify_version: 1.0.0
+created_at: 2026-04-10T13:25:13.2764185+08:00
+verified: true
