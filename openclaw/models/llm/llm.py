@@ -6,6 +6,8 @@ for OpenClaw Gateway routing.
 """
 
 from typing import Optional, Union, Generator
+import re
+import uuid
 
 from dify_plugin import OAICompatLargeLanguageModel
 from dify_plugin.entities.model.llm import LLMResult
@@ -62,22 +64,22 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
                 f"Expected format: openclaw/{{agent_id}} (e.g., openclaw/dify)"
             )
 
+        # Extract session key from messages (SYSTEM block containing UUID)
+        session_key, prompt_messages = self._extract_session_key_from_messages(prompt_messages)
+
         # Build custom headers
         extra_headers = {
             "x-openclaw-agent-id": agent_id,
         }
 
-        # Build session key from credential
-        # User can configure {{sys.conversation_id}} or {{sys.user_id}} externally
-        session_key = credentials.get("openclaw_session_key")
+        # Build session key header from message-extracted value
         if session_key:
-            session_key_str = str(session_key)
-            if ":" in session_key_str:
+            if ":" in session_key:
                 # Pre-formatted value (contains colon), use as-is
-                extra_headers["x-openclaw-session-key"] = session_key_str
+                extra_headers["x-openclaw-session-key"] = session_key
             else:
-                # Bare value (e.g., UUID), format as agent:{agent_id}:{uuid}
-                extra_headers["x-openclaw-session-key"] = f"agent:{agent_id}:{session_key_str}"
+                # Bare value, format as agent:{agent_id}:{uuid}
+                extra_headers["x-openclaw-session-key"] = f"agent:{agent_id}:{session_key}"
 
         # Get endpoint URL and handle /v1 suffix
         endpoint_url = credentials.get("endpoint_url", "").rstrip("/")
@@ -149,6 +151,39 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
 
         return cleaned
 
+    UUID_PATTERN = re.compile(
+        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    )
+
+    def _extract_session_key_from_messages(
+        self, messages: list[PromptMessage]
+    ) -> tuple[str, list[PromptMessage]]:
+        """
+        Look for SYSTEM messages. If content is a bare UUID string, use it as session key.
+        All SYSTEM blocks are removed from the returned messages.
+
+        If no UUID session key is found, generate a random UUID as fallback.
+
+        Returns:
+            (session_key, cleaned_messages)
+        """
+        cleaned: list[PromptMessage] = []
+        found_session_key: str | None = None
+
+        for m in messages:
+            if isinstance(m, SystemPromptMessage):
+                content = m.content
+                if isinstance(content, str) and self.UUID_PATTERN.match(content.strip()):
+                    found_session_key = content.strip()
+                # Always remove SYSTEM blocks
+                continue
+            cleaned.append(m.model_copy())
+
+        if found_session_key is None:
+            found_session_key = str(uuid.uuid4())
+
+        return found_session_key, cleaned
+
     def validate_credentials(self, model: str, credentials: dict) -> None:
         """
         Validate model credentials with custom headers.
@@ -176,6 +211,9 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         extra_headers = {
             "x-openclaw-agent-id": agent_id,
         }
+
+        # Session key: random UUID for validation
+        extra_headers["x-openclaw-session-key"] = f"agent:{agent_id}:{uuid.uuid4()}"
 
         # Get endpoint URL and handle /v1 suffix
         endpoint_url = credentials.get("endpoint_url", "").rstrip("/")

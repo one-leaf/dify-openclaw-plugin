@@ -60,18 +60,7 @@ model_credential_schema:
       help:
         en_US: Chat mode for chat models, Completion mode for text completion models
         zh_Hans: 对话模型选择 Chat 模式，文本补全模型选择 Completion 模式
-    - variable: openclaw_session_key
-      label:
-        en_US: Session Key
-        zh_Hans: 会话路由键
-      type: text-input
-      required: false
-      placeholder:
-        en_US: "{{sys.conversation_id}}"
-        zh_Hans: "{{sys.conversation_id}}"
-      help:
-        en_US: Session routing key. Use {{sys.conversation_id}} for per-conversation sessions.
-        zh_Hans: 会话路由键。使用 {{sys.conversation_id}} 实现每对话独立会话。
+
 provider_credential_schema:
   credential_form_schemas:
     - variable: endpoint_url
@@ -114,18 +103,7 @@ provider_credential_schema:
       help:
         en_US: Chat mode for chat models, Completion mode for text completion models
         zh_Hans: 对话模型选择 Chat 模式，文本补全模型选择 Completion 模式
-    - variable: openclaw_session_key
-      label:
-        en_US: Session Key
-        zh_Hans: 会话路由键
-      type: text-input
-      required: false
-      placeholder:
-        en_US: "{{sys.conversation_id}}"
-        zh_Hans: "{{sys.conversation_id}}"
-      help:
-        en_US: Session routing key. Use {{sys.conversation_id}} for per-conversation sessions.
-        zh_Hans: 会话路由键。使用 {{sys.conversation_id}} 实现每对话独立会话。
+
 extra:
   python:
     provider_source: provider/openclaw.py
