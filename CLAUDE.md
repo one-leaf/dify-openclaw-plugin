@@ -61,47 +61,23 @@ openclaw/
 | Header | Source |
 |--------|--------|
 | `x-openclaw-agent-id` | Extracted from model name (`openclaw/{agent_id}` → `{agent_id}`) |
-| `x-openclaw-session-key` | From `openclaw_session_key` credential |
+| `x-openclaw-session-key` | Extracted from SYSTEM message block, or random UUID fallback |
 
-### Session Key Format
+### Session Key Mechanism
 
-- **Bare value** (no colon, e.g., UUID): Auto-formatted as `agent:{agent_id}:{uuid}`
-- **Pre-formatted** (contains colon): Used as-is
+The plugin extracts the session key from `SYSTEM` messages in the conversation:
 
-### Dify Built-in Variables
-
-| Variable | Resolves To | Usage |
-|----------|-------------|-------|
-| `{{sys.conversation_id}}` | Current conversation ID | Recommended for `openclaw_session_key` |
-| `{{sys.user_id}}` | Current user ID | Auto-passed as `user` parameter to API |
-
-### Recommended Configuration
-
-```yaml
-endpoint_url: "http://localhost:8080"
-api_key: ""  # Optional, depends on auth mode
-mode: "chat"
-openclaw_session_key: "{{sys.conversation_id}}"
-```
-
-### OpenClaw Gateway Auth Modes
-
-| Mode | Config | Header |
-|------|--------|--------|
-| Token | `gateway.auth.mode="token"` | `Authorization: Bearer <token>` |
-| Password | `gateway.auth.mode="password"` | `Authorization: Bearer <password>` |
-| Trusted Proxy | `gateway.auth.mode="trusted-proxy"` | None required |
-| None | `gateway.auth.mode="none"` | None required |
-
-For `api_key` credential in Dify:
-- Use token/password for token/password auth modes
-- Can be empty for trusted-proxy/none modes
+1. **UUID detection**: Scans SYSTEM blocks for a bare UUID string
+2. **Extraction**: If found, uses it as session key and removes the SYSTEM block
+3. **Fallback**: Generates a random UUID if no SYSTEM UUID is found
+4. **Format**: Bare UUID → `agent:{agent_id}:{uuid}`; pre-formatted (contains `:`) → used as-is
 
 ### Message Cleaning
 
 The `_clean_messages()` method handles API compatibility:
 
-1. **Preserves** system and tool messages unchanged
-2. **Merges** consecutive assistant messages (combines content and tool_calls)
-3. **Filters** empty messages (no content and no tool calls)
-4. **Appends** an empty user message if none exists (required by OpenAI-compatible API)
+1. **Merges** consecutive assistant messages (combines content and tool_calls)
+2. **Filters** empty messages (no content and no tool calls)
+3. **Appends** an empty user message if none exists (required by OpenAI-compatible API)
+
+Note: SYSTEM blocks are already removed by `_extract_session_key_from_messages()` before `_clean_messages()` runs.

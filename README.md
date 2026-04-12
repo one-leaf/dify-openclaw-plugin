@@ -6,10 +6,20 @@ A Dify models plugin that provides OpenAI-compatible API access with custom head
 
 - **OpenAI-Compatible Protocol**: Works with Dify's standard OpenAI provider interface
 - **Custom Header Support**: Adds OpenClaw Gateway routing headers:
-  - `x-openclaw-model`: Override backend model for selected agent
-  - `x-openclaw-agent-id`: Compatibility override for agent selection  
-  - `x-openclaw-session-key`: Controls session routing
-  - `x-openclaw-message-channel`: Sets synthetic ingress channel context
+  - `x-openclaw-agent-id`: Extracted from model name for agent selection
+  - `x-openclaw-session-key`: Extracted from conversation for session routing
+
+## Session Key Mechanism
+
+The plugin automatically extracts the session key from the `SYSTEM` message block in the conversation:
+
+1. **UUID detection**: If a SYSTEM block contains a bare UUID string, it is used as the session key
+2. **SYSTEM removal**: All SYSTEM blocks are removed before forwarding to the Gateway
+3. **Fallback**: If no UUID session key is found, a random UUID is generated
+
+### Usage in Dify
+
+In your Dify application, configure a pre-prompt or variable that injects `{{sys.conversation_id}}` as a SYSTEM message. The plugin will detect and extract the UUID, then route the session accordingly.
 
 ## Installation
 
@@ -54,10 +64,8 @@ OpenClaw Gateway supports multiple auth modes:
 
 | Header | Required | Description |
 |--------|----------|-------------|
-| `x-openclaw-model` | Yes | `<provider/model-or-bare-id>` - overrides backend model |
-| `x-openclaw-agent-id` | No | `<agentId>` - compatibility override |
-| `x-openclaw-session-key` | No | `<sessionKey>` - controls session routing |
-| `x-openclaw-message-channel` | No | `<channel>` - sets ingress channel context |
+| `x-openclaw-agent-id` | Yes | Extracted from model name (`openclaw/{agentId}`) |
+| `x-openclaw-session-key` | Yes | Extracted from SYSTEM message or random UUID |
 
 ### Model Syntax
 
@@ -76,28 +84,9 @@ model: "agent:<agentId>"    # Compatibility syntax
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `base_url` | Yes | OpenClaw Gateway URL (e.g., `http://localhost:8080`) |
-| `api_key` | Yes | API key or password for authentication |
-| `openclaw_model` | No | Model override. Supports `{{sys.app_id}}` |
-| `openclaw_agent_id` | No | Agent ID. Supports `{{sys.app_id}}` |
-| `openclaw_session_key` | No | Session key. Supports `{{sys.conversation_id}}` |
-| `openclaw_channel` | No | Message channel |
-
-### Dify Built-in Variables
-
-| Variable | Resolves To | Usage |
-|----------|-------------|-------|
-| `{{sys.conversation_id}}` | Conversation UUID | Per-conversation session routing |
-| `{{sys.user_id}}` | Current user ID | Auto-passed as `user` parameter |
-
-### Recommended Configuration
-
-```yaml
-openclaw_agent_id: "main"                   # Or leave empty for "main"
-openclaw_session_key: "{{sys.conversation_id}}"
-```
-
-This ensures each conversation has isolated session routing.
+| `endpoint_url` | Yes | OpenClaw Gateway URL (e.g., `http://localhost:8080`) |
+| `api_key` | No | API key or password for authentication (depends on auth mode) |
+| `mode` | Yes | Completion type, set to `chat` |
 
 ### Model Configuration
 
@@ -116,17 +105,18 @@ Once configured, select the OpenClaw provider when setting up LLM models in Dify
 ### Project Structure
 
 ```
-models/openclaw/
-├── __init__.py          # Plugin entry point
-├── openclaw.py          # Provider implementation
-├── openclaw.yaml        # Provider metadata
-├── openclaw_credentials.yaml  # Credential schema
-├── _position.yaml       # Provider position
-├── icon.svg             # Provider icon
-├── api/
-│   └── http.py          # HTTP client with header injection
-└── utils/
-    └── headers.py       # Header builder
+openclaw/
+├── manifest.yaml          # Plugin metadata
+├── main.py                # Entry point
+├── requirements.txt       # Dependencies
+├── _assets/
+│   └── icon.svg           # Plugin icon
+├── provider/
+│   ├── openclaw.py        # OpenclawModelProvider
+│   └── openclaw.yaml      # Provider config with credential schemas
+└── models/
+    └── llm/
+        └── llm.py         # OpenclawLargeLanguageModel
 ```
 
 ### Testing
