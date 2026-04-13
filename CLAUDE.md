@@ -61,7 +61,7 @@ openclaw/
 | Header | Source |
 |--------|--------|
 | `x-openclaw-agent-id` | Extracted from model name (`openclaw/{agent_id}` → `{agent_id}`) |
-| `x-openclaw-session-key` | Extracted from SYSTEM message block, or random UUID fallback |
+| `x-openclaw-session-key` | Extracted from SYSTEM message block containing UUID, or random UUID fallback |
 
 ### Session Key Mechanism
 
