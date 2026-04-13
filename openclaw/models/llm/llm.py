@@ -159,8 +159,8 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         self, messages: list[PromptMessage]
     ) -> tuple[str, list[PromptMessage]]:
         """
-        Look for SYSTEM messages. If content is a bare UUID string, use it as session key.
-        All SYSTEM blocks are removed from the returned messages.
+        Look for SYSTEM messages whose content is a bare UUID string.
+        Only UUID SYSTEM messages are removed; all other messages are preserved.
 
         If no UUID session key is found, generate a random UUID as fallback.
 
@@ -174,9 +174,9 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
             if isinstance(m, SystemPromptMessage):
                 content = m.content
                 if isinstance(content, str) and self.UUID_PATTERN.match(content.strip()):
+                    # Found UUID session key, extract and remove this block
                     found_session_key = content.strip()
-                # Always remove SYSTEM blocks
-                continue
+                    continue
             cleaned.append(m.model_copy())
 
         if found_session_key is None:

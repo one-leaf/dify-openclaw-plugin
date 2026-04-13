@@ -68,16 +68,17 @@ openclaw/
 The plugin extracts the session key from `SYSTEM` messages in the conversation:
 
 1. **UUID detection**: Scans SYSTEM blocks for a bare UUID string
-2. **Extraction**: If found, uses it as session key and removes the SYSTEM block
+2. **Extraction**: If found, uses it as session key and removes **only that UUID block**
 3. **Fallback**: Generates a random UUID if no SYSTEM UUID is found
 4. **Format**: Bare UUID → `agent:{agent_id}:{uuid}`; pre-formatted (contains `:`) → used as-is
+
+Non-UUID SYSTEM messages are preserved and forwarded to the API.
 
 ### Message Cleaning
 
 The `_clean_messages()` method handles API compatibility:
 
-1. **Merges** consecutive assistant messages (combines content and tool_calls)
-2. **Filters** empty messages (no content and no tool calls)
-3. **Appends** an empty user message if none exists (required by OpenAI-compatible API)
-
-Note: SYSTEM blocks are already removed by `_extract_session_key_from_messages()` before `_clean_messages()` runs.
+1. **Preserves** system and tool messages unchanged
+2. **Merges** consecutive assistant messages (combines content and tool_calls)
+3. **Filters** empty messages (no content and no tool calls)
+4. **Appends** an empty user message if none exists (required by OpenAI-compatible API)

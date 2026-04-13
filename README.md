@@ -14,7 +14,7 @@ A Dify models plugin that provides OpenAI-compatible API access with custom head
 The plugin automatically extracts the session key from the `SYSTEM` message block in the conversation:
 
 1. **UUID detection**: If a SYSTEM block contains a bare UUID string, it is used as the session key
-2. **SYSTEM removal**: All SYSTEM blocks are removed before forwarding to the Gateway
+2. **Selective removal**: Only the UUID SYSTEM block is removed; other SYSTEM messages are preserved
 3. **Fallback**: If no UUID session key is found, a random UUID is generated
 
 ### Usage in Dify
