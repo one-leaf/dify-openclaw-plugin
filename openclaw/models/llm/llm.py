@@ -75,9 +75,9 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         # Build session key header from message-extracted value
         if not session_key:
             if user:
-                session_key = uuid.uuid5(uuid.NAMESPACE_DNS, user).hex  
-            else:                
-                session_key = str(uuid.uuid4())            
+                session_key = str(uuid.uuid5(uuid.NAMESPACE_DNS, user))
+            else:
+                session_key = str(uuid.uuid4())
             
         if ":" in session_key:
             # Pre-formatted value (contains colon), use as-is
@@ -90,10 +90,13 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         endpoint_url = credentials.get("endpoint_url", "").rstrip("/")
         if endpoint_url.endswith("/v1"):
             endpoint_url = endpoint_url[:-3]
+        if not endpoint_url:
+            from dify_plugin.errors.model import InvokeBadRequestError
+            raise InvokeBadRequestError("endpoint_url credential is required")
 
         # Store in credentials for parent class to use
         credentials["extra_headers"] = extra_headers
-        credentials["endpoint_url"] = endpoint_url + "/v1" if endpoint_url else None
+        credentials["endpoint_url"] = endpoint_url + "/v1"
         credentials["mode"] = "chat"
 
         # Merge consecutive messages with the same role to follow API specs
@@ -164,9 +167,10 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         self, messages: list[PromptMessage]
     ) -> tuple[Optional[str], list[PromptMessage]]:
         """
-        查找 SYSTEM 类型且内容为裸 UUID 的消息，提取为 session key。
-        只移除 UUID SYSTEM 消息，其他消息保留。
-        如果没有找到 session key，则返回 None。
+        Extract session key from SYSTEM messages containing a bare UUID.
+
+        Removes the UUID SYSTEM message block from the message list and
+        returns it as the session key. All other messages are preserved.
 
         Returns:
             (session_key or None, cleaned_messages)
@@ -220,10 +224,13 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         endpoint_url = credentials.get("endpoint_url", "").rstrip("/")
         if endpoint_url.endswith("/v1"):
             endpoint_url = endpoint_url[:-3]
+        if not endpoint_url:
+            from dify_plugin.errors.model import InvokeBadRequestError
+            raise InvokeBadRequestError("endpoint_url credential is required")
 
         # Store in credentials for parent class to use
         credentials["extra_headers"] = extra_headers
-        credentials["endpoint_url"] = endpoint_url + "/v1" if endpoint_url else None
+        credentials["endpoint_url"] = endpoint_url + "/v1"
 
         # Add required fields for OAICompat validation
         credentials["mode"] = "chat"

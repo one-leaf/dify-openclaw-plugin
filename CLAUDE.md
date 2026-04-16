@@ -55,6 +55,8 @@ openclaw/
 - `_invoke()`: Extracts agent_id from model name, injects custom headers, cleans messages
 - `_clean_messages()`: Merges consecutive same-role messages, ensures at least one user message exists
 - `validate_credentials()`: Validates model credentials with custom headers
+- `_extract_session_key_from_messages()`: Extracts UUID session key from SYSTEM messages
+- Raises `InvokeBadRequestError` if `endpoint_url` credential is missing
 
 ### Custom Headers
 
