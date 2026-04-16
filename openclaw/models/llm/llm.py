@@ -73,13 +73,18 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         }
 
         # Build session key header from message-extracted value
-        if session_key:
-            if ":" in session_key:
-                # Pre-formatted value (contains colon), use as-is
-                extra_headers["x-openclaw-session-key"] = session_key
-            else:
-                # Bare value, format as agent:{agent_id}:{uuid}
-                extra_headers["x-openclaw-session-key"] = f"agent:{agent_id}:{session_key}"
+        if not session_key:
+            if user:
+                session_key = uuid.uuid5(uuid.NAMESPACE_DNS, user).hex  
+            else:                
+                session_key = str(uuid.uuid4())            
+            
+        if ":" in session_key:
+            # Pre-formatted value (contains colon), use as-is
+            extra_headers["x-openclaw-session-key"] = session_key
+        else:
+            # Bare value, format as agent:{agent_id}:{uuid}
+            extra_headers["x-openclaw-session-key"] = f"agent:{agent_id}:{session_key}"
 
         # Get endpoint URL and handle /v1 suffix
         endpoint_url = credentials.get("endpoint_url", "").rstrip("/")
@@ -157,15 +162,14 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
 
     def _extract_session_key_from_messages(
         self, messages: list[PromptMessage]
-    ) -> tuple[str, list[PromptMessage]]:
+    ) -> tuple[Optional[str], list[PromptMessage]]:
         """
-        Look for SYSTEM messages whose content is a bare UUID string.
-        Only UUID SYSTEM messages are removed; all other messages are preserved.
-
-        If no UUID session key is found, generate a random UUID as fallback.
+        查找 SYSTEM 类型且内容为裸 UUID 的消息，提取为 session key。
+        只移除 UUID SYSTEM 消息，其他消息保留。
+        如果没有找到 session key，则返回 None。
 
         Returns:
-            (session_key, cleaned_messages)
+            (session_key or None, cleaned_messages)
         """
         cleaned: list[PromptMessage] = []
         found_session_key: str | None = None
@@ -178,9 +182,6 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
                     found_session_key = content.strip()
                     continue
             cleaned.append(m.model_copy())
-
-        if found_session_key is None:
-            found_session_key = str(uuid.uuid4())
 
         return found_session_key, cleaned
 
