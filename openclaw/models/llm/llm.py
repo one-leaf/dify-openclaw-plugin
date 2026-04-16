@@ -5,11 +5,13 @@ Extends OAICompatLargeLanguageModel to add custom header support
 for OpenClaw Gateway routing.
 """
 
+import logging
 from typing import Optional, Union, Generator
 import re
 import uuid
 
 from dify_plugin import OAICompatLargeLanguageModel
+from dify_plugin.config.logger_format import plugin_logger_handler
 from dify_plugin.entities.model.llm import LLMResult
 from dify_plugin.entities.model.message import (
     PromptMessage,
@@ -20,6 +22,10 @@ from dify_plugin.entities.model.message import (
     UserPromptMessage,
 )
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(plugin_logger_handler)
+
 
 class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
     """
@@ -29,6 +35,10 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
     - x-openclaw-agent-id: From model name (format: openclaw/{agent_id})
     - x-openclaw-session-key: Session routing
     """
+
+    UUID_PATTERN = re.compile(
+        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    )
 
     def _invoke(
         self,
@@ -64,18 +74,26 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
                 f"Expected format: openclaw/{{agent_id}} (e.g., openclaw/dify)"
             )
 
-        # Extract session key from messages (SYSTEM block containing UUID)
-        session_key, prompt_messages = self._extract_session_key_from_messages(prompt_messages)
-
         # Build custom headers
         extra_headers = {
             "x-openclaw-agent-id": agent_id,
         }
 
+        # Extract session key from messages (SYSTEM block containing UUID)
+        session_key, prompt_messages = self._extract_session_key_from_messages(prompt_messages)
+
+        logger.info(
+            "invoke: user=%s, session_key=%s, messages=%d",
+            user, session_key, len(prompt_messages),
+        )
+
         # Build session key header from message-extracted value
         if not session_key:
             if user:
-                session_key = str(uuid.uuid5(uuid.NAMESPACE_DNS, user))
+                if self.UUID_PATTERN.match(user):
+                    session_key = user
+                else:
+                    session_key = str(uuid.uuid5(uuid.NAMESPACE_DNS, user))
             else:
                 session_key = str(uuid.uuid4())
             
@@ -158,10 +176,6 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
             cleaned.append(UserPromptMessage(content=""))
 
         return cleaned
-
-    UUID_PATTERN = re.compile(
-        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-    )
 
     def _extract_session_key_from_messages(
         self, messages: list[PromptMessage]
