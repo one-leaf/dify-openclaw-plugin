@@ -82,11 +82,6 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         # Extract session key from messages (SYSTEM block containing UUID)
         session_key, prompt_messages = self._extract_session_key_from_messages(prompt_messages)
 
-        logger.info(
-            "invoke: user=%s, session_key=%s, messages=%d",
-            user, session_key, len(prompt_messages),
-        )
-
         # Build session key header from message-extracted value
         if not session_key:
             if user:
@@ -103,6 +98,11 @@ class OpenclawLargeLanguageModel(OAICompatLargeLanguageModel):
         else:
             # Bare value, format as agent:{agent_id}:{uuid}
             extra_headers["x-openclaw-session-key"] = f"agent:{agent_id}:{session_key}"
+
+        logger.info(
+            "invoke: user=%s, agent_id=%s, session_key=%s,  messages_len=%d",
+            user, agent_id, session_key, len(prompt_messages),
+        )
 
         # Get endpoint URL and handle /v1 suffix
         endpoint_url = credentials.get("endpoint_url", "").rstrip("/")
